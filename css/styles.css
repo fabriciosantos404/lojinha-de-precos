@@ -1,0 +1,656 @@
+/* =========================================================================
+   css/styles.css — Lojinha de Preços
+   CSS puro (D-7): um único arquivo, sem pré-processador, sem @import,
+   sem fontes externas (RNF-04) — compatível com CSP style-src 'self'.
+   Estrutura: 1 tokens → 2 reset → 3 base → 4 layout → 5 filtros →
+              6 resultados/estados → 7 cards/badges (render.js) →
+              8 grupos → 9 footer → 10 acessibilidade → 11 movimento reduzido.
+   ========================================================================= */
+
+/* =========================================================================
+   1. TOKENS DE TEMA (D-7)
+   O tema claro é a base (:root). O tema escuro é declarado DUAS vezes:
+     (a) [data-theme="dark"]                     → escolha explícita (RF-07);
+     (b) @media (prefers-color-scheme: dark)     → padrão do sistema.
+   A duplicação dos valores escuros (sem pré-processador) mitiga o flash de
+   tema (risco R1): o CSS aplica o escuro antes de qualquer JS executar.
+   Contraste: todos os pares texto/fundo deste arquivo atingem WCAG AA 4.5:1
+   nos dois temas (RNF-02), conferidos manualmente por fórmula de luminância.
+   ========================================================================= */
+
+html {
+  color-scheme: light dark; /* nativos (select, scroll) acompanham o SO */
+}
+
+:root {
+  /* Cores — tema claro */
+  --bg: #f4f6f8;
+  --surface: #fcfcfd;
+  --surface-2: #eef1f5;
+  --text: #1c2128;
+  --text-muted: #55606e;
+  --border: #d3d9e0;
+  --accent: #1554b8;
+  --accent-hover: #10469a;
+  --accent-soft: #e6eefb;
+  --on-accent: #fcfcfd;
+  --focus: #0b57d0;
+  --success: #0f6b3d;      /* bônus positivos (RF-09) */
+  --success-soft: #e3f4e9;
+  --danger: #b3261e;       /* bônus negativos + erro (RF-09/RNF-09) */
+  --danger-soft: #fdeceb;
+
+  /* Espaçamentos */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.5rem;
+
+  /* Raios */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Tipografia — apenas fonte do sistema (sem CDN, RNF-04) */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 1.875rem;
+
+  /* Layout */
+  --page-max: 1440px;
+  --control-min-h: 44px;   /* alvo de toque mínimo (RNF-03) */
+  --shadow-1: 0 1px 2px rgb(28 33 40 / 0.08);
+}
+
+/* (a) Tema escuro por escolha explícita do usuário — ver nota acima. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14181d;
+  --surface: #1d232b;
+  --surface-2: #262d36;
+  --text: #e8ecf1;
+  --text-muted: #a6b1be;
+  --border: #3a434f;
+  --accent: #6ea8fe;
+  --accent-hover: #8bbcff;
+  --accent-soft: #16283f;
+  --on-accent: #14181d;
+  --focus: #9ecbff;
+  --success: #4ec97e;
+  --success-soft: #133222;
+  --danger: #ff7b72;
+  --danger-soft: #3a1512;
+  --shadow-1: 0 1px 2px rgb(8 10 13 / 0.5);
+}
+
+/* Tema claro explícito vence sobre o prefers-color-scheme do sistema. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* (b) Tema escuro do sistema — espelho idêntico de [data-theme="dark"].
+   O :not([data-theme="light"]) garante que a escolha explícita do usuário
+   (claro) nunca seja sobrescrita pela preferência do SO. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #14181d;
+    --surface: #1d232b;
+    --surface-2: #262d36;
+    --text: #e8ecf1;
+    --text-muted: #a6b1be;
+    --border: #3a434f;
+    --accent: #6ea8fe;
+    --accent-hover: #8bbcff;
+    --accent-soft: #16283f;
+    --on-accent: #14181d;
+    --focus: #9ecbff;
+    --success: #4ec97e;
+    --success-soft: #133222;
+    --danger: #ff7b72;
+    --danger-soft: #3a1512;
+    --shadow-1: 0 1px 2px rgb(8 10 13 / 0.5);
+  }
+}
+
+/* =========================================================================
+   2. RESET MÍNIMO
+   ========================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%; /* evita zoom automático de fonte no iOS */
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* =========================================================================
+   3. BASE — tipografia, corpo e transições (só cores, ≤ 150 ms)
+   ========================================================================= */
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  overflow-wrap: anywhere; /* textos longos sem scroll horizontal */
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background-color: var(--accent-soft);
+  color: var(--text);
+}
+
+/* Transições apenas em cores e ≤ 150 ms (requisito de performance/UX). */
+button,
+input,
+select {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+/* =========================================================================
+   4. LAYOUT — header, main e footer (mobile-first, 320–1440 px)
+   ========================================================================= */
+
+.site-header {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.site-header__branding {
+  min-width: 0;
+}
+
+.site-header h1 {
+  font-size: var(--font-size-xl);
+  overflow-wrap: anywhere;
+}
+
+.site-header__tagline {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+main {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  min-width: 0;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+main section {
+  min-width: 0;
+}
+
+.site-footer {
+  width: 100%;
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding: var(--space-4);
+  border-top: 1px solid var(--border);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* =========================================================================
+   5. FILTROS — fieldset semântico + grade responsiva
+   Grade: 1 col ≤ 480 px → 2 cols ≥ 600 px → 3 cols ≥ 900 px →
+          4 cols ≥ 1200 px (a busca ocupa 2 colunas para não sobrar buraco).
+   ========================================================================= */
+
+fieldset {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+legend {
+  padding-inline: var(--space-2);
+  font-weight: 600;
+}
+
+.filters__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.filters__field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.filters__field label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.filters__actions {
+  margin-top: var(--space-4);
+}
+
+@media (min-width: 600px) {
+  .filters__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .filters__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .filters__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .filters__field:first-child {
+    grid-column: span 2; /* campo de busca largo em telas grandes */
+  }
+}
+
+/* =========================================================================
+   6. CONTROLES — alvos de toque ≥ 44 px (RNF-03)
+   ========================================================================= */
+
+input,
+select {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-min-h);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+input:focus-visible,
+select:focus-visible {
+  border-color: var(--focus);
+}
+
+button {
+  min-height: var(--control-min-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--accent);
+  color: var(--on-accent);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Botão de tema: estilo "ghost" quadrado 44×44. O aria-label é atualizado
+   pelo theme.js conforme o estado atual (RF-07). */
+#theme-toggle {
+  flex: 0 0 auto;
+  width: var(--control-min-h);
+  min-width: var(--control-min-h);
+  padding: 0;
+  font-size: var(--font-size-lg);
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+#theme-toggle:hover {
+  background-color: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Ações de limpar filtros são secundárias; "Tentar novamente" é primária. */
+#clear-filters,
+#clear-filters-empty {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+#clear-filters:hover,
+#clear-filters-empty:hover {
+  background-color: var(--surface-2);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* =========================================================================
+   7. RESULTADOS — contagem, estados e lista de cards
+   ========================================================================= */
+
+/* Região aria-live (role="status"): mantida sempre no fluxo (mesmo vazia)
+   para os leitores de tela anunciarem de forma confiável (RNF-02). */
+#result-count {
+  min-height: 1.5em;
+  margin-bottom: var(--space-3);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+#results {
+  min-width: 0;
+}
+
+/* Ocultação explícita dos estados não ativos (gerenciada pelo render.js). */
+[hidden] {
+  display: none !important;
+}
+
+/* --- 7.1 Estado: carregando — contido, tracejado, neutro --- */
+#state-loading {
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* --- 7.2 Estado: vazio — cartão neutro com ação de recuperação --- */
+#state-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+#state-empty p {
+  font-size: var(--font-size-lg);
+}
+
+/* --- 7.3 Estado: erro — tom de alerta distinto (RNF-09) --- */
+#state-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--danger);
+  background-color: var(--danger-soft);
+  border: 2px solid var(--danger);
+  border-radius: var(--radius-lg);
+}
+
+#state-error p {
+  overflow-wrap: anywhere;
+}
+
+#state-error code {
+  font-size: var(--font-size-sm);
+  padding: 0.1em 0.4em;
+  color: var(--text);
+  background-color: var(--surface);
+  border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
+}
+
+/* --- 7.4 Grade de cards: 1 col → 2 (≥ 640 px) → 3 (≥ 1000 px) ---
+   Compartilhada com a lista de grupos (modo agrupado) para não duplicar. */
+#item-list,
+.group__list {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  #item-list,
+  .group__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1000px) {
+  #item-list,
+  .group__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================================
+   8. CARD + BADGES (gerados pelo js/render.js — T-14)
+   Estrutura esperada: .card > .card__header + .card__description +
+   .card__badges; grupos: .group__title + .group__list.
+   ========================================================================= */
+
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.card__header {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.card__emoji {
+  flex: 0 0 auto;
+  font-size: var(--font-size-xl);
+  line-height: 1;
+}
+
+.card__name {
+  min-width: 0;
+  font-size: var(--font-size-lg);
+  overflow-wrap: anywhere;
+}
+
+/* Preço em destaque: maior peso + cor de destaque (RF-08). */
+.card__price {
+  margin-left: auto;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.card__description {
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Badge base: pill, inline-flex, quebra texto longo (RF-08). */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  padding: 0.15rem var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--text);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+/* Preço/unidade em destaque de acento (badge de PO e "por noite"). */
+.badge--price,
+.badge--unit {
+  color: var(--accent);
+  background-color: var(--accent-soft);
+  border-color: transparent;
+}
+
+/* Bônus positivo (verde) e cura — RF-09/RB-07.
+   A cor nunca é o único sinal: o texto já carrega "+" (risco #11). */
+.badge--bonus,
+.badge--heal {
+  color: var(--success);
+  background-color: var(--success-soft);
+  border-color: transparent;
+}
+
+/* Bônus negativo (vermelho) — RF-09/RB-07, sinal "−" no texto. */
+.badge--malus {
+  color: var(--danger);
+  background-color: var(--danger-soft);
+  border-color: transparent;
+}
+
+/* Demais variantes (.badge--weight/--damage/--ac/--req/--restriction/
+   --duration/--tag) usam a aparência neutra da base. */
+
+/* =========================================================================
+   9. GRUPOS (modo agrupado — gerado pelo render.js)
+   ========================================================================= */
+
+.group__title {
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-3);
+  padding-left: var(--space-3);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  border-left: 4px solid var(--accent);
+  overflow-wrap: anywhere;
+}
+
+.group__title:first-child {
+  margin-top: 0;
+}
+
+/* =========================================================================
+   10. ACESSIBILIDADE — foco visível sempre por teclado (RNF-02)
+   ========================================================================= */
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+   11. MOVIMENTO REDUCIDO — desliga transições/animações (RNF-02)
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================================================
+   12. AJUSTES FINOS DE MOBILE (≤ 480 px)
+   ========================================================================= */
+
+@media (max-width: 480px) {
+  .site-header h1 {
+    font-size: var(--font-size-lg);
+  }
+
+  main {
+    padding-inline: var(--space-3);
+  }
+}

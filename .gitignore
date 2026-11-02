@@ -1,0 +1,40 @@
+# =============================================================================
+# .gitignore - lojinha-de-precos
+#
+# O projeto e HTML/CSS/JS puro com ZERO dependencias (sem npm, sem CDN, sem
+# build). Este arquivo ignora apenas artefatos de ferramentas pontuais e do
+# sistema operacional - nunca codigo-fonte nem dados do catalogo.
+#
+# NAO ignorado (de proposito): data/ (catalogo), docs/ (documentacao),
+# js/ (modulos ES), css/ (estilos), index.html, scripts/, tests/,
+# .env.example (template sem segredos, se algum dia existir).
+# =============================================================================
+
+# --- Dependencias (aparecem apenas se alguem rodar "npx serve" / Node) -------
+node_modules/
+
+# --- Python (servidor stdlib e validador de dados) ---------------------------
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# --- Segredos (regra: NUNCA commitar) ----------------------------------------
+# O projeto nao possui variaveis de ambiente hoje; estas regras sao preventivas.
+# Todo valor real de segredo vive FORA do git (variavel de ambiente / secret manager).
+.env
+.env.*
+!.env.example
+
+# --- Sistema operacional -----------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Editores e artefatos temporarios ----------------------------------------
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+*~

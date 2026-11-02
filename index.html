@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Catálogo consultável dos preços de itens de uma loja de RPG: bebidas, refeições, pousada, poções de vida, armas e armaduras em Peça de Ouro (PO).">
+  <title>Lojinha de Preços — Catálogo de Itens de RPG</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-header__branding">
+      <h1>Lojinha de Preços</h1>
+      <p class="site-header__tagline">Catálogo de itens de RPG</p>
+    </div>
+    <button type="button" id="theme-toggle" aria-label="Alternar modo escuro">
+      <span aria-hidden="true">🌓</span>
+    </button>
+  </header>
+
+  <main>
+    <section aria-label="Filtros">
+      <fieldset>
+        <legend>Filtros</legend>
+        <div class="filters__grid">
+          <p class="filters__field">
+            <label for="search">Buscar item</label>
+            <input type="search" id="search" name="search" placeholder="Buscar por nome…" autocomplete="off">
+          </p>
+          <p class="filters__field">
+            <label for="price-min">Preço mínimo (PO)</label>
+            <input type="number" id="price-min" name="price-min" min="0">
+          </p>
+          <p class="filters__field">
+            <label for="price-max">Preço máximo (PO)</label>
+            <input type="number" id="price-max" name="price-max" min="0">
+          </p>
+          <p class="filters__field">
+            <label for="category">Categoria</label>
+            <select id="category" name="category">
+              <option value="all">Todas as categorias</option>
+              <option value="bebidas">Bebidas</option>
+              <option value="refeicoes">Refeições</option>
+              <option value="pousada">Pousada</option>
+              <option value="pocoes">Poções de Vida</option>
+              <option value="armas">Armas</option>
+              <option value="armaduras">Armaduras &amp; Escudo</option>
+            </select>
+          </p>
+          <p class="filters__field">
+            <label for="subcategory">Subcategoria</label>
+            <select id="subcategory" name="subcategory">
+              <option value="all">Todas</option>
+            </select>
+          </p>
+          <p class="filters__field">
+            <label for="sort">Ordenação</label>
+            <select id="sort" name="sort">
+              <option value="category">Categoria (padrão)</option>
+              <option value="price-asc">Preço: menor → maior</option>
+              <option value="price-desc">Preço: maior → menor</option>
+              <option value="name-asc">Nome: A → Z</option>
+              <option value="name-desc">Nome: Z → A</option>
+            </select>
+          </p>
+        </div>
+        <p class="filters__actions">
+          <button type="button" id="clear-filters">Limpar filtros</button>
+        </p>
+      </fieldset>
+    </section>
+
+    <section aria-label="Resultados">
+      <p id="result-count" role="status" aria-live="polite"></p>
+      <!-- A visibilidade dos estados é gerenciada pelo render.js; o HTML define só os IDs estáveis. -->
+      <div id="results">
+        <p id="state-loading">Carregando itens…</p>
+        <div id="state-empty" hidden>
+          <p>Nenhum item encontrado.</p>
+          <button type="button" id="clear-filters-empty">Limpar filtros</button>
+        </div>
+        <div id="state-error" hidden>
+          <p>Não foi possível carregar os itens. Verifique o arquivo <code>data/items.json</code> e tente novamente.</p>
+          <button type="button" id="retry">Tentar novamente</button>
+        </div>
+        <ul id="item-list" hidden></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Valores em PO (Peça de Ouro). Fonte: lista da loja do Discord.</p>
+    <p>Transcrição fiel da lista original — itens agrupados por categoria e subcategoria.</p>
+  </footer>
+</body>
+</html>

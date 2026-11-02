@@ -50,7 +50,7 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 
 | ID | Requisito | Critério de verificação mínimo |
 |---|---|---|
-| **RF-01** | Exibir todos os itens da fonte agrupados por **categoria** (Bebidas, Refeições, Pousada, Poções de Vida, Armas, Armaduras & Escudo). | Todos os 52 itens aparecem sob a categoria correta. |
+| **RF-01** | Exibir todos os itens da fonte agrupados por **categoria** (Bebidas, Refeições, Pousada, Poções de Vida, Armas, Armaduras & Escudo). | Todos os 50 itens aparecem sob a categoria correta. |
 | **RF-02** | Exibir **subcategorias** quando aplicável: Armas → Simples / Marciais / Versáteis; Armaduras → Leves / Médias / Pesadas / Escudo. | Cada item da fonte está na subcategoria correta. |
 | **RF-03** | **Busca por nome**: campo de texto filtra em tempo real (input ou ≤300 ms de debounce) por correspondência parcial, sem diferenciar maiúsculas/minúsculas nem acentos. | "pocao" encontra "Poção"; "sko" encontra "Skooma". |
 | **RF-04** | **Faixa de preço**: campos "mínimo" e "máximo" (números ≥ 0 em PO) que combinam com a busca e os demais filtros (E **AND** entre tipos de filtro). | Definir mín=5 e máx=15 mostra apenas itens de 5–15 PO. |
@@ -60,9 +60,9 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 | **RF-08** | **Badges de atributos** por item: `preço (PO)`, `peso (kg)`, `dano (ex.: 1d8)`, `CA` (ex.: `CA 14 + Dex máx +2`), `requisito (FOR 13)`, `cura (ex.: 4d4+4)`, `bônus (+1 concentração)`, `restrição (não acumulativo)`, `duração ([Descanso Curto])`. | Cada item exibe todos os atributos aplicáveis da fonte. |
 | **RF-09** | **Badges de efeito** destacam visualmente **bônus positivos** (verde) e **negativos** (vermelho) — ex.: Skooma `+1 For/Dex/Con` (verde) e `-1 Int/Sab/Car` (vermelho). | Skooma exibe ambos os bônus com cores/sinais distintos. |
 | **RF-10** | **Contagem de resultados** visível ("N itens encontrados"), atualizada a cada mudança de filtro/busca/ordenação. | Com filtro de categoria Bebidas: "12 itens encontrados". |
-| **RF-11** | **Estado vazio**: quando nenhum item corresponde, exibir mensagem clara + botão **"Limpar filtros"** que restaura estado inicial. | Busca "xyz" sem match mostra estado vazio; clicar em limpar restaura os 52 itens. |
+| **RF-11** | **Estado vazio**: quando nenhum item corresponde, exibir mensagem clara + botão **"Limpar filtros"** que restaura estado inicial. | Busca "xyz" sem match mostra estado vazio; clicar em limpar restaura os 50 itens. |
 | **RF-12** | **Persistência de preferências**: tema sempre persistido; filtros, busca e ordenação podem ser restaurados na sessão (*Should*). | Ver RF-07 (obrigatório) e história US-08 (opcional). |
-| **RF-13** | **Dados em JSON** (`data/items.json`): todos os 52 itens com nome, categoria, subcategoria, preço, peso, efeitos e restrições fiéis à fonte. | Conferência item a item contra a lista do usuário (Seção 7). |
+| **RF-13** | **Dados em JSON** (`data/items.json`): todos os 50 itens com nome, categoria, subcategoria, preço, peso, efeitos e restrições fiéis à fonte. | Conferência item a item contra a lista do usuário (Seção 7). |
 | **RF-14** | **Substituição de emotes do Discord** por emojis equivalentes nos textos/nomes, mantendo o restante do texto fiel. | Nenhum `:Emote:` permanece no JSON. |
 | **RF-15** | **Servidor local**: um comando único (ex.: `python -m http.server 8000` ou `npx serve`) serve o site. | O site abre em `http://localhost:8000` sem etapa de build. |
 
@@ -70,7 +70,7 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 
 | ID | Requisito | Alvo mensurável |
 |---|---|---|
-| **RNF-01** | **Performance**: render inicial e atualizações de filtro imperceptíveis. | Lista de 52 itens renderiza em < 100 ms; filtro/ordenação em < 50 ms no hardware médio; nenhum bloqueio de UI. |
+| **RNF-01** | **Performance**: render inicial e atualizações de filtro imperceptíveis. | Lista de 50 itens renderiza em < 100 ms; filtro/ordenação em < 50 ms no hardware médio; nenhum bloqueio de UI. |
 | **RNF-02** | **Acessibilidade básica**: navegação completa por teclado (Tab/Enter/Espaço), foco visível, `aria-label` em controles, `aria-live` na contagem de resultados, contraste mínimo **WCAG AA (4.5:1)** em ambos os temas. | Teste manual de teclado + inspeção de contraste aprovados. |
 | **RNF-03** | **Responsividade mobile-first**: layout utilizável de **320 px a 1440 px**, cards empilhados no mobile, filtros acessíveis (drawer/colapsável no mobile). | Sem scroll horizontal a 320 px; alvos de toque ≥ 44 px. |
 | **RNF-04** | **Offline**: após servido localmente, funciona **sem internet**. Zero dependências de CDN, fontes externas ou npm install. | Desconectar rede → site continua funcional. |
@@ -143,11 +143,12 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 | Refeições | — | **6** (Simples, Básica, Completa, Boa Qualidade, Nobre, Luxuosa) |
 | Pousada (por noite) | — | **5** (Simples, Confortável, Boa Qualidade, Nobre, Suíte Luxuosa) |
 | Poções de Vida | — | **10** (Cura Menor, Básica, Comum, Aumentada, Potente, Suprema, Mágica, Extraordinária, Elixir da Vida, Poção de Recuperação Moderada de Slot de Magia) |
-| Armas | Simples **2** + Marciais **5** + Versáteis **2** | **9** |
-| Armaduras & Escudo | Leves **3** + Médias **3** + Pesadas **3** + Escudo **1** | **10** |
-| **TOTAL** | | **52** |
+| Armas | Simples **2** + Marciais **4** + Versáteis **2** | **8** |
+| Armaduras & Escudo | Leves **3** + Médias **2** + Pesadas **3** + Escudo **1** | **9** |
+| **TOTAL** | | **50** |
 
-✅ Conferência com as contagens informadas: 12 + 6 + 5 + 10 + 9 + 10 = **52 itens**.
+✅ Conferência com a fonte (corrigida pelo Tech Lead — D-13): 12 + 6 + 5 + 10 + 8 + 9 = **50 itens**.
+> **Nota (D-13):** a contagem original "52" desta Fase 1 estava errada — a fonte tem **4** armas marciais (1d8, 1d10, 1d12, 2d6) e **2** armaduras médias (Escamas, Cota de Malha). Fidelidade à fonte (RB-12) prevalece: inventar itens seria dado falso.
 
 ## 8. User Stories (com critérios de aceitação)
 
@@ -214,7 +215,7 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 - **GIVEN** eu aplico um filtro que não retorna resultados (ex.: busca "xyz")
 - **THEN** é exibida mensagem "Nenhum item encontrado" com botão "Limpar filtros"
 - **WHEN** eu clico em "Limpar filtros"
-- **THEN** busca, faixa e categorias voltam ao padrão e os 52 itens são exibidos
+- **THEN** busca, faixa e categorias voltam ao padrão e os 50 itens são exibidos
 
 ### US-08 — Manter o catálogo atualizado pelo JSON *(Should)*
 > **Como** mantenedor, **quero** editar preços e efeitos em JSON **para** atualizar sem tocar no código.
@@ -228,7 +229,7 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 ## 9. Fluxos principais
 
 **Fluxo 1 — Consulta por categoria**
-1. Usuário abre o site (servidor local) → 52 itens renderizados, categoria "Todas", ordenação padrão.
+1. Usuário abre o site (servidor local) → 50 itens renderizados, categoria "Todas", ordenação padrão.
 2. Seleciona "Armaduras" → vê subcategorias Leves/Médias/Pesadas/Escudo.
 3. Seleciona "Pesadas" → vê 3 itens com badges CA, FOR e peso.
 4. Contagem mostra "3 itens encontrados".
@@ -259,7 +260,7 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 ## 10. Prioridades (MoSCoW)
 
 ### Must (MVP — sem isso o produto não entrega valor)
-- Exibir os 52 itens fiéis à fonte em JSON (RF-13, RF-14).
+- Exibir os 50 itens fiéis à fonte em JSON (RF-13, RF-14).
 - Categorias e subcategorias (RF-01, RF-02).
 - Busca por nome (RF-03) e faixa de preço (RF-04).
 - Ordenação por preço e nome (RF-05).
