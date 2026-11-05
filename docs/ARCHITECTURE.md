@@ -40,6 +40,8 @@ Browser (http://localhost:8000)
 │
 ├─ GET /index.html
 │    ├─ <link rel="stylesheet" href="css/styles.css">     (CSS bloqueante, 1 arquivo)
+│    ├─ <script src="js/boot-guard.js">                   (CLÁSSICO — roda até em file://, D-20)
+│    │     └─ file: → mostra orientação de servidor no #state-error (antes do módulo falhar)
 │    └─ <script type="module" src="js/app.js">           (módulo ES → exige HTTP, não file://)
 │
 ▼
@@ -100,7 +102,7 @@ render.js:
 | # | Tecnologia | DECISION | REASON | IMPACT | ALTERNATIVES | WHY NOT |
 |---|---|---|---|---|---|---|
 | a | **HTML/CSS/JS puro + módulos ES** (`<script type="module">`) | Usar 6 módulos ES nativos, sem bundler | Escopo do usuário; ES modules dão escopo isolado e dependências explícitas (`import`) de graça; sem build = `git clone` + servidor e pronto | Browser moderno obrigatório (últimas 2 versões, RNF-06 — ok); servidor local obrigatório (ver b) | Scripts clássicos com globals; IIFE única; framework (Vue/React) | Globals poluem namespace e criam acoplamento oculto por ordem de `<script>`; framework viola decisão do usuário e exige build/npm |
-| b | **Servidor local** — primário `python -m http.server 8000`; alternativa `npx serve` (e `py -m http.server` no Windows sem `python` no PATH) | Um servidor estático mínimo, documentado no README + wrappers em `scripts/` | **Módulos ES NÃO carregam via `file://`** (bloqueio de CORS do browser): `fetch('data/items.json')` e `import` falham em arquivo local. Servidor é *obrigatório*, não opcional | Um comando (RF-15); offline após servir (RNF-04); funciona sem internet | `file://` com script clássico; Live Server (extensão VS Code); Browsersync | `file://` exige abandonar módulos ES; extensões VS Code são dependência de IDE e não "um comando" |
+| b | **Servidor local** — primário `python -m http.server 8000 --bind 127.0.0.1`; alternativa `npx serve` (e `py -m http.server` no Windows sem `python` no PATH) | Um servidor estático mínimo, documentado no README + wrappers em `scripts/` (ambos com `--bind 127.0.0.1`, M1 do SECURITY.md) | **Módulos ES NÃO carregam via `file://`** (bloqueio de CORS do browser): `fetch('data/items.json')` e `import` falham em arquivo local. Servidor é *obrigatório*, não opcional | Um comando (RF-15); offline após servir (RNF-04); funciona sem internet | `file://` com script clássico; Live Server (extensão VS Code); Browsersync | `file://` exige abandonar módulos ES; extensões VS Code são dependência de IDE e não "um comando" |
 | c | **Dados em `data/items.json` (estático, com envelope)** | `fetch` de um JSON versionado no boot | Mantenedor edita só JSON (RNF-05); dados separados de código; envelope permite validação/migração de schema | Edição exige recarregar a página (aceitável); JSON inválido → estado de erro (RNF-09) | Inline no HTML; JS como `data.js` (globally); CSV; GraphQL | Inline mistura dados e apresentação; `data.js` global não tem validação e quebra CSP; CSV exige parser e não modela objetos aninhados |
 | d | **Sem banco de dados** | Catálogo inteiro cabe em memória | 50 itens (e até ~5k itens) cabem num arquivo; nenhum requisito de escrita em runtime | Consulta é filtragem em memória (< 1 ms com pré-normalização) | SQLite (WASM); IndexedDB | Dados não mudam em runtime; banco adiciona migração, driver e estado sem necessidade (YAGNI) |
 | e | **Sem backend / sem API** | Só arquivos estáticos servidos localmente | Escopo é leitura (Seção 3 "Out"); deploy somente local (decisão 3); zero auth/pagamento | Qualquer lógica server-side futura exigiria replanejamento (não previsto) | Cloud Functions; Node/Express estático | Nenhuma regra de negócio precisa de servidor; manter um processo é custo sem valor |
@@ -136,8 +138,8 @@ lojinha-de-precos/
 │   └── items.json             # Envelope versionado + 50 itens (fonte da verdade do catálogo)
 │
 ├── scripts/
-│   ├── serve.ps1              # Windows → python -m http.server 8000
-│   ├── serve.sh               # macOS/Linux → python3 -m http.server 8000
+│   ├── serve.ps1              # Windows → python -m http.server 8000 --bind 127.0.0.1
+│   ├── serve.sh               # macOS/Linux → python3 -m http.server 8000 --bind 127.0.0.1
 │   └── validate_data.py       # Valida schema, enums, ids únicos, contagens, emotes residual
 │
 ├── tests/
@@ -414,7 +416,7 @@ bindEvents(): void                       // input(debounce), change, click (limp
 - **Render completo da lista (não incremental):** com 50 (ou até ~1.000) itens, reconstruir a lista inteira em `DocumentFragment` é mais rápido e mais simples que diff manual. Um render por evento (não um por campo derivado).
 - **Anúncio acessível:** só a contagem é `aria-live="polite"`; a lista não (evitaria leitura caótica ao digitar).
 - **Estado vazio vs. erro são distintos:** vazio = filtros válidos sem match (botão *Limpar filtros*); erro = fetch/JSON falhou (botão *Tentar novamente* reexecuta `loadItems`).
-- **Tema fora do ciclo de lista:** `toggleTheme` faz `setState` + `applyTheme` **sem** re-render dos itens (nada na lista depende do tema — o CSS cuida disso).
+- **Tema fora do ciclo de lista:** o handler em `app.js` faz `setState({ theme: toggleTheme(state.theme) })` — `toggleTheme` (theme.js) persiste em `localStorage` e aplica via `applyTheme` — **sem** re-render dos itens (nada na lista depende do tema — o CSS cuida disso; §7.1 não entra no fluxo).
 
 ---
 
@@ -465,7 +467,7 @@ Sem backend, a superfície é: **dados do JSON, o browser e o localStorage.**
 | CSP frágil | Inline script/style | Meta CSP (abaixo) com `script-src 'self'`; sem inline scripts |
 | `localStorage` corrompido/indisponível | Modo privado, storage cheio | `theme.js` com `try/catch` em leitura e escrita; valor lido é validado contra enum `'light'|'dark'` (qualquer outro → fallback do sistema) (RNF-08) |
 | JSON inválido / arquivo ausente | Edição manual com erro | `try/catch` em `JSON.parse` + validação de envelope → `status:'error'` com mensagem amigável e botão *Tentar novamente* (RNF-09). Nunca tela branca |
-| Navegação a partir de `file://` | Usuário tenta abrir `index.html` duplo-clique | README destaca "use o servidor"; `loadItems` detecta `location.protocol === 'file:'` e mostra mensagem orientando o comando correto |
+| Navegação a partir de `file://` | Usuário tenta abrir `index.html` duplo-clique | README destaca "use o servidor"; `js/boot-guard.js` (clássico, D-20) detecta `location.protocol === 'file:'` e mostra mensagem orientando o comando correto (o módulo ES nunca chega a executar em `file://`); `loadItems` reforça a detecção em runtime |
 
 ### CSP via meta tag (viabilidade avaliada)
 
@@ -524,7 +526,7 @@ Sem backend, a superfície é: **dados do JSON, o browser e o localStorage.**
 
 | # | Risco | Prob. × Impacto | Mitigação |
 |---|---|---|---|
-| 1 | **Módulos ES não carregam via `file://`** (CORS) → usuário duplo-clique no HTML e vê tela em branco | Alta × Alta | Servidor é obrigatório e documentado como **primeiro passo** do README; wrappers `scripts/serve.*`; `loadItems` detecta `file:` e exibe orientação; teste manual do fluxo "sem servidor" |
+| 1 | **Módulos ES não carregam via `file://`** (CORS) → usuário duplo-clique no HTML e vê tela em branco | Alta × Alta | Servidor é obrigatório e documentado como **primeiro passo** do README; wrappers `scripts/serve.*`; **`js/boot-guard.js` (script clássico, D-20)** detecta `file:` antes do módulo e exibe orientação (o `loadItems` sozinho seria inalcançável — o módulo nem executa); teste manual do fluxo "sem servidor" |
 | 2 | **Servidor indisponível no Windows** (`python` fora do PATH → erro `'python' não é reconhecido`) | Média × Média | README documenta os 3 comandos: `python`, `py` (launcher Windows) e `npx serve`; nenhum exige instalação de dependência do projeto |
 | 3 | **JSON inválido** após edição manual (vírgula, aspas) | Alta × Média | RNF-09: `try/catch` em `JSON.parse` + estado de erro com *Tentar novamente*; `scripts/validate_data.py` antes de commit; exemplo de item documentado no README |
 | 4 | **Schema divergente do JSON** (campo faltando, enum errado, id duplicado) | Média × Média | Validador checa obrigatoriedade, enums, unicidade de `id`, `price ≥ 0`, tipos de `modifiers`; front valida envelope (`version`, `Array.isArray`) → `SCHEMA` |
@@ -570,6 +572,7 @@ Sem backend, a superfície é: **dados do JSON, o browser e o localStorage.**
 | `filters.js` | `utils.js` | render, theme, state, app |
 | `render.js` | `utils.js` | filters, theme, state, app |
 | `app.js` | todos | — (ninguém importa app.js) |
+| `boot-guard.js` | *(nada — script clássico, sem `import`, D-20)* | qualquer módulo (não é ES) |
 
 **Proibições transversais:** `localStorage` só em `theme.js` · DOM só em `render.js`, `theme.js`, `app.js` · `innerHTML` em lugar nenhum · dados do JSON nunca viram HTML.
 
@@ -603,9 +606,9 @@ ALTERNATIVES: script clássico com globals; uma IIFE única.
 WHY NOT: globals criam acoplamento oculto e ordem de carregamento frágil.
 
 **D-2 — Servidor estático local como pré-requisito de execução**
-DECISION: `python -m http.server 8000` (primário), `py`/`npx serve` (alternativas).
-REASON: módulos ES e `fetch` não operam via file:// (CORS).
-IMPACT: "um comando" antes de usar o site; offline a partir daí.
+DECISION: `python -m http.server 8000 --bind 127.0.0.1` (primário), `py`/`npx serve --listen 127.0.0.1:3000` (alternativas); wrappers `scripts/serve.*` aplicam o mesmo bind.
+REASON: módulos ES e `fetch` não operam via file:// (CORS). `--bind 127.0.0.1` (M1 do SECURITY.md) evita expor a raiz do repo — incl. `.git/` — na LAN.
+IMPACT: "um comando" antes de usar o site; offline a partir daí; acesso remoto exige bind deliberado (`0.0.0.0` + risco documentado em DEPLOYMENT §8).
 ALTERNATIVES: file:// com dados inline; extensão de IDE.
 WHY NOT: abandonaria D-1 ou criaria dependência de plugin.
 
@@ -713,3 +716,10 @@ IMPACT: README/DEPLOYMENT/checklist usam `node --test`. **APROVADO pelo Tech Lea
 DECISION: NÃO há badge `badge--heal` nem parsing de `effectText` para extrair cura/bônus de resistência; o texto do card (`effectText`, D-15) já exibe tudo. Badges estruturados limitam-se a: unit, weight, damage, ac, req, bonus/malus (`modifiers`), restriction (`restrictions`), duration (tags `descanso-*`) e tag (`droga`/`slot-magia`/`atributo`).
 REASON: parsing de texto livre é frágil (mesmo racional do D-6); `effectText` é fiel à fonte (RB-12) e suficiente para leitura.
 IMPACT: `render.js` não emite badge de cura; QA não deve esperá-la no checklist. **APROVADO pelo Tech Lead.**
+
+**D-20 — `js/boot-guard.js`: script clássico anti-`file://` antes do módulo**
+DECISION: `index.html` inclui `<script src="js/boot-guard.js">` (CLÁSSICO, sem `type="module"`, sem import) ANTES do `<script type="module" src="js/app.js">`. Em `file:` exibe orientação de servidor reaproveitando `#state-error` (textContent/createElement); em outros protocols faz early-return (zero overhead). Em `http(s)://` o módulo executa normalmente.
+REASON: em `file://` o navegador bloqueia módulos ES por CORS (origin null) → `app.js` NUNCA executa → a detecção de `file:` dentro de `loadItems()` seria **inalcançável** e o usuário ficaria em "Carregando itens…" eterno (achado QA T-19).
+IMPACT: fluxo de boot tem 2 caminhos; CSP `script-src 'self'` cobre (arquivo externo, zero inline); checklist da Seção 15 testa o guard. **APROVADO pelo Tech Lead.**
+ALTERNATIVES: inline no HTML (violaria CSP); import dinâmico do módulo (também bloqueado em file://).
+WHY NOT: manter só o `loadItems` deixaria o caso de uso real (duplo-clique) sem mensagem.

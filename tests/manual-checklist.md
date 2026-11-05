@@ -1,7 +1,7 @@
 # manual-checklist.md — Checklist manual de validação (T-19)
 
 > **Projeto:** `lojinha-de-precos` · **Dono do arquivo:** `qa-engineer` · **Fase:** 9 (validação cruzada, ARCHITECTURE §12.2)
-> **Base:** `docs/REQUIREMENTS.md` (RF-01..RF-15, RNF-01..RNF-09, US-01..US-08) · `docs/ARCHITECTURE.md` (§9 segurança, D-5..D-19) · `docs/PLAN_EXECUCAO.md` §4 DoD Tests
+> **Base:** `docs/REQUIREMENTS.md` (RF-01..RF-15, RNF-01..RNF-09, US-01..US-08) · `docs/ARCHITECTURE.md` (§9 segurança, D-5..D-20) · `docs/PLAN_EXECUCAO.md` §4 DoD Tests
 > **Complemento:** resultados da suíte automatizada e das checagens estáticas → `tests/REGRESSION.md`
 
 ---
@@ -10,8 +10,8 @@
 
 | # | Passo | Resultado esperado | Status |
 |---|---|---|---|
-| P1 | Na raiz do projeto, subir o servidor: `py scripts\serve.ps1` | Servidor ativo e URL `http://localhost:8000` exibida | [ ] |
-| P2 | (Alternativas — RF-15) `python -m http.server 8000` ou `npx serve` | Site abre sem etapa de build (`npx serve` → `http://localhost:3000`) | [ ] |
+| P1 | Na raiz do projeto, subir o servidor: `.\scripts\serve.ps1` (Windows) — ou `./scripts/serve.sh` (macOS/Linux) | Servidor ativo e URL `http://localhost:8000` exibida | [ ] |
+| P2 | (Alternativas — RF-15) `python -m http.server 8000 --bind 127.0.0.1` ou `npx serve` | Site abre sem etapa de build (`npx serve` → `http://localhost:3000`) | [ ] |
 | P3 | Abrir `http://localhost:8000` no navegador (últimas 2 versões de Chrome/Edge/Firefox/Safari — RNF-06) | Página carrega sem erros no Console (F12 → aba Console) | [ ] |
 | P4 | Deixar o Console do DevTools aberto durante todo o checklist | Console limpo (só mensagens do próprio teste) | [ ] |
 | P5 | Antes de testar, confirmar a base verde: `node --test` e `py scripts/validate_data.py` | `pass 68 / fail 0` e `OK: 50 itens validados, 0 erros` (ver `tests/REGRESSION.md`) | [ ] |
@@ -119,8 +119,8 @@
 
 | # | Passo | Resultado esperado | Status |
 |---|---|---|---|
-| 9.1 | **Variante 1:** `py scripts\serve.ps1` (Windows) — ou `./scripts/serve.sh` (macOS/Linux) | Servidor sobe em `http://localhost:8000` e o site funciona | [ ] |
-| 9.2 | **Variante 2:** `python -m http.server 8000` (na raiz do projeto) | Mesmo resultado em `http://localhost:8000` | [ ] |
+| 9.1 | **Variante 1:** `.\scripts\serve.ps1` (Windows) — ou `./scripts/serve.sh` (macOS/Linux) | Servidor sobe em `http://localhost:8000` e o site funciona | [ ] |
+| 9.2 | **Variante 2:** `python -m http.server 8000 --bind 127.0.0.1` (na raiz do projeto) | Mesmo resultado em `http://localhost:8000` | [ ] |
 | 9.3 | **Variante 3:** `npx serve` | Site funciona em `http://localhost:3000` (baixa sob demanda, sem `npm install` do projeto) | [ ] |
 | 9.4 | Com o site aberto, **desabilitar a rede** (Wi-Fi/ethernet) e recarregar com **Ctrl+Shift+R** | 50 itens renderizam normalmente (RNF-04); aba **Network** sem requisições a domínios externos | [ ] |
 | 9.5 | Reativar a rede | Nada muda (o site já funcionava offline) | [ ] |
@@ -185,12 +185,12 @@
 
 ## 15. `file://` — abertura sem servidor (D-2, RF-15)
 
-> **Guard (2026-11-04):** `js/boot-guard.js` (script **clássico**, antes do módulo) assume em `file://`: troca `#state-loading` pela orientação em `#state-error` e esconde `#retry` (não há handler — `app.js` é módulo e não roda). Em `http://` ele **não faz nada** (ver 9.7). O passo 15.2 reflete esse comportamento novo e cobre o achado "FILE_PROTOCOL inalcançável" do T-19.
+> **Guard (2026-11-04):** `js/boot-guard.js` (script **clássico**, antes do módulo — **D-20**) assume em `file://`: troca `#state-loading` pela orientação em `#state-error` e esconde `#retry` (não há handler — `app.js` é módulo e não roda). Em `http://` ele **não faz nada** (ver 9.7). O passo 15.2 reflete esse comportamento novo e cobre o achado "FILE_PROTOCOL inalcançável" do T-19.
 
 | # | Passo | Resultado esperado | Status |
 |---|---|---|---|
 | 15.1 | **Fechar o servidor** e abrir `index.html` por **duplo clique** no Explorer | O site **não** fica em tela branca nem preso em "Carregando itens…": aparece a orientação PT-BR do guard (`FILE_PROTOCOL` de `js/render.js` é a alternativa — ver 15.4) | [ ] |
-| 15.2 | Duplo-clique em `index.html` → observar a região de estados (`#results`) | `#state-error` **visível** com a mensagem do guard (cita `py scripts/serve.ps1` **e** `http://localhost:8000`), `#state-loading` e `#retry` **ocultos**, sem "Carregando itens…" eterno | [ ] |
+| 15.2 | Duplo-clique em `index.html` → observar a região de estados (`#results`) | `#state-error` **visível** com a mensagem do guard — **literal exato** (idêntico em `js/boot-guard.js` e em `js/render.js`): `Este site precisa de um servidor local (os módulos ES são bloqueados em file://). Rode .\scripts\serve.ps1 (Windows) ou ./scripts/serve.sh (macOS/Linux) — depois abra http://localhost:8000` (cita **os dois** wrappers **e** `http://localhost:8000`), `#state-loading` e `#retry` **ocultos**, sem "Carregando itens…" eterno | [ ] |
 | 15.3 | Olhar o Console do DevTools durante o 15.2 | **Zero** recusa de CSP (`Refused to load the script` / `script-src 'self'`) — se aparecer, o guard não roda em `file://` → **registrar como achado** (não é falha silenciosa aceitável) | [ ] |
 | 15.4 | (Defesa) Se a orientação vier com outro texto ou com botão "Tentar novamente" | Navegador que **permite** módulo ES em `file://` → `app.js` assume e mostra a mensagem `FILE_PROTOCOL` de `render.js` (com `#retry` funcional) — **aceitável**; registrar **qual** das duas mensagens apareceu | [ ] |
 | 15.5 | Se ainda assim aparecer "Carregando itens…" eterno com erro de CORS no Console (guard não executou) | **Registrar como achado** no relatório e reabrir via servidor — **não** alterar código neste teste | [ ] |
@@ -242,6 +242,6 @@
 | RNF-08 | 13.1–13.3 | [ ] |
 | RNF-09 | 14.1–14.5 | [ ] |
 
-> **Verificações novas em 2026-11-04:** **9.6** = exposição em LAN bloqueada por `--bind 127.0.0.1` (SECURITY.md **M1**) · **9.7 + 15.1–15.6** = comportamento do guard `js/boot-guard.js` (correção do achado "FILE_PROTOCOL inalcançável" do T-19). Ambas sem cobertura automatizada (exigem navegador/rede) → só aqui.
+> **Verificações novas em 2026-11-04:** **9.6** = exposição em LAN bloqueada por `--bind 127.0.0.1` (SECURITY.md **M1**) · **9.7 + 15.1–15.6** = comportamento do guard `js/boot-guard.js` (correção do achado "FILE_PROTOCOL inalcançável" do T-19; decisão **D-20**) · **15.2** = literal multiplataforma da mensagem (`.\scripts\serve.ps1` **+** `./scripts/serve.sh` **+** `http://localhost:8000` — achado MINOR "mensagem Windows-only" **FECHADO**, ver `tests/REGRESSION.md` §7). Ambas sem cobertura automatizada (exigem navegador/rede) → só aqui.
 
 **Não coberto por este checklist (automatizado em `tests/`):** normalização de acentos, AND dos filtros, desempate RB-11, agrupamento D-5, imutabilidade do `setState`, `formatPrice` — ver `tests/REGRESSION.md`.

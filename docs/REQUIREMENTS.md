@@ -64,7 +64,7 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 | **RF-12** | **Persistência de preferências**: tema sempre persistido; filtros, busca e ordenação podem ser restaurados na sessão (*Should*). | Ver RF-07 (obrigatório) e história US-08 (opcional). |
 | **RF-13** | **Dados em JSON** (`data/items.json`): todos os 50 itens com nome, categoria, subcategoria, preço, peso, efeitos e restrições fiéis à fonte. | Conferência item a item contra a lista do usuário (Seção 7). |
 | **RF-14** | **Substituição de emotes do Discord** por emojis equivalentes nos textos/nomes, mantendo o restante do texto fiel. | Nenhum `:Emote:` permanece no JSON. |
-| **RF-15** | **Servidor local**: um comando único (ex.: `python -m http.server 8000` ou `npx serve`) serve o site. | O site abre em `http://localhost:8000` sem etapa de build. |
+| **RF-15** | **Servidor local**: um comando único (ex.: `python -m http.server 8000 --bind 127.0.0.1` ou `npx serve`) serve o site. | O site abre em `http://localhost:8000` sem etapa de build. |
 
 ## 5. Requisitos não funcionais
 
@@ -304,5 +304,5 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 | 10 | Elixir: efeitos múltiplos com alternativa (`OU`). | **Suposição:** `effectText` com texto completo e tags `cura`, `atributo`, `restricao`, `descanso-longo`. Não separar em itens distintos (RB-09). |
 | 11 | Contraste em modo escuro e badges coloridos (verde/vermelho). | Riscos de acessibilidade: exigir WCAG AA nos dois temas (RNF-02); sinalizar também com `+`/`−` (não só cor) — não depender apenas de cor. |
 | 12 | JSON editado manualmente pode ficar inválido. | Estado de erro amigável (RNF-09) + `docs` com exemplo de item. |
-| 13 | Comando de servidor local: `python -m http.server` vs `npx serve`. | **Suposição:** documentar **ambos** no README; nenhum depende de build/npm install no fluxo principal (npx baixa sob demanda). |
+| 13 | Comando de servidor local: `python -m http.server` vs `npx serve`. | **Suposição:** documentar **os 3** no README (`python`, `py` launcher do Windows e `npx serve`); nenhum depende de build/npm install no fluxo principal (npx baixa sob demanda). Todos com `--bind 127.0.0.1` (SECURITY.md M1). |
 | 14 | Pousada "por noite" pode ser confundido com preço único. | Badge `por noite` obrigatório nos 5 itens de Pousada (RB-02). |

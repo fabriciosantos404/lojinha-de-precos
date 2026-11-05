@@ -52,7 +52,9 @@ const ERROR_MESSAGES = Object.freeze({
   NOT_FOUND: 'Não foi possível carregar os itens. Verifique se o servidor local está rodando.',
   PARSE: 'O arquivo de dados está inválido. Verifique o arquivo data/items.json e tente novamente.',
   SCHEMA: 'O arquivo de dados está inválido. Verifique o arquivo data/items.json e tente novamente.',
-  FILE_PROTOCOL: 'Este site precisa de um servidor local. Rode: py scripts/serve.ps1',
+  FILE_PROTOCOL:
+    'Este site precisa de um servidor local (os módulos ES são bloqueados em file://). ' +
+    'Rode .\\scripts\\serve.ps1 (Windows) ou ./scripts/serve.sh (macOS/Linux) — depois abra http://localhost:8000',
 });
 
 const FALLBACK_ERROR_MESSAGE = ERROR_MESSAGES.NETWORK;

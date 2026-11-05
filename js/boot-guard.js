@@ -20,7 +20,7 @@
 
   const MESSAGE =
     'Este site precisa de um servidor local (os módulos ES são bloqueados em file://). ' +
-    'Rode: py scripts/serve.ps1 — e abra http://localhost:8000';
+    'Rode .\\scripts\\serve.ps1 (Windows) ou ./scripts/serve.sh (macOS/Linux) — depois abra http://localhost:8000';
 
   /**
    * Troca #state-loading por #state-error com a orientação de servidor,
