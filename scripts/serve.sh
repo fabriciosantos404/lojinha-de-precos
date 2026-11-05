@@ -6,7 +6,8 @@
 # O que faz:
 #   Sobe um servidor de arquivos estaticos usando SOMENTE a biblioteca padrao
 #   (stdlib) do Python (python3 -m http.server) a partir da RAIZ do repositório,
-#   servindo o site em http://localhost:8000.
+#   servindo o site em http://localhost:8000 — RESTRITO a 127.0.0.1
+#   (via --bind 127.0.0.1; nunca exposto nas demais interfaces da maquina).
 #
 # Por que e obrigatorio:
 #   O site usa modulos ES (<script type="module">) e fetch() de data/items.json.
@@ -24,8 +25,8 @@
 #    "Permission denied".)
 #
 # ALTERNATIVAS SEM ESTE SCRIPT (mesmo resultado):
-#   python3 -m http.server 8000       # Python 3 (macOS moderno, Linux)
-#   python -m http.server 8000        # se o binario se chama "python"
+#   python3 -m http.server 8000 --bind 127.0.0.1   # Python 3 (macOS, Linux)
+#   python -m http.server 8000 --bind 127.0.0.1    # se o binario e "python"
 #   npx serve                         # alternativa via Node.js (baixa sob
 #                                     # demanda; abre em http://localhost:3000)
 #
@@ -45,10 +46,13 @@ fi
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$RAIZ"
 
-cat <<EOF
-=== Servidor local - lojinha-de-precos ===
-Diretorio servido : $RAIZ
-URL do site       : http://localhost:$PORTA
+# Heredoc QUOTADO (<<'EOF') para nao expandir $RAIZ/$(...) no corpo — as duas
+# linhas dinamicas sao emitidas via printf com aspas (sem risco de execucao).
+printf '=== Servidor local - lojinha-de-precos ===\n'
+printf 'Diretorio servido : %s\n' "$RAIZ"
+printf 'URL do site       : %s\n' "http://localhost:$PORTA"
+printf 'Escuta            : somente 127.0.0.1 (nao exposto na LAN)\n'
+cat <<'EOF'
 
 AVISO: nao abra o index.html via file:// - os modulos ES e o fetch() do
        JSON nao funcionam direto do disco (bloqueio de CORS do navegador).
@@ -77,9 +81,13 @@ tentar() {
     return 1
   fi
   echo "Usando '$cmd' como servidor estatico..."
+  # --bind 127.0.0.1: SEMPRE restrito ao loopback. Sem isso o http.server
+  # escuta em 0.0.0.0 e publica a RAIZ do repositorio (incl. .git/) em
+  # todas as interfaces (risco de exfiltracao via LAN / DNS rebinding).
+  echo "Executando: $cmd -m http.server $PORTA --bind 127.0.0.1"
   local inicio fim codigo=0
   inicio=$(date +%s)
-  "$cmd" -m http.server "$PORTA" || codigo=$?
+  "$cmd" -m http.server "$PORTA" --bind 127.0.0.1 || codigo=$?
   fim=$(date +%s)
   if [ $((fim - inicio)) -lt 2 ]; then
     echo "[aviso] '$cmd' nao conseguiu manter o servidor de pe (codigo $codigo) - tentando a proxima opcao..." >&2

@@ -708,3 +708,8 @@ IMPACT: `render.js` pinta `Group[]` plano com `.group__title`/`.group__list`; pa
 DECISION: o comando documentado em todos os docs é `node --test` (auto-descoberta) — `node --test tests/` falha no Node 24/Windows.
 REASON: o runner trata `tests/` como módulo de entrada nessa combinação; a auto-descoberta cobre `tests/*.test.mjs`.
 IMPACT: README/DEPLOYMENT/checklist usam `node --test`. **APROVADO pelo Tech Lead.**
+
+**D-19 — Sem badge de cura derivada: a cura vive em `effectText`**
+DECISION: NÃO há badge `badge--heal` nem parsing de `effectText` para extrair cura/bônus de resistência; o texto do card (`effectText`, D-15) já exibe tudo. Badges estruturados limitam-se a: unit, weight, damage, ac, req, bonus/malus (`modifiers`), restriction (`restrictions`), duration (tags `descanso-*`) e tag (`droga`/`slot-magia`/`atributo`).
+REASON: parsing de texto livre é frágil (mesmo racional do D-6); `effectText` é fiel à fonte (RB-12) e suficiente para leitura.
+IMPACT: `render.js` não emite badge de cura; QA não deve esperá-la no checklist. **APROVADO pelo Tech Lead.**

@@ -281,6 +281,7 @@ py scripts/validate_data.py
 
 # macOS / Linux (e Windows com `python` no PATH)
 python scripts/validate_data.py
+python3 scripts/validate_data.py   # distros onde `python` é Python 2 (ou inexistente)
 ```
 
 **Saída esperada (catálogo íntegro):**
@@ -326,6 +327,10 @@ O script é **stdlib puro** (sem `pip install`): `json`, `re`, `pathlib`, `sys`,
 (decisão h da ARCHITECTURE §3). Ele aceita caminho alternativo:
 `py scripts/validate_data.py outro/arquivo.json` (útil para testar um item novo antes de colar
 no catálogo).
+
+> **Resumo erros × avisos:** `ERRO:` = bloqueia o commit (exit 1) — regras 1–14
+> (arquivo/envelope/schema/enums/domínio/emotes). `AVISO:` = informativo (exit 0) —
+> regras 14 (descanso sem tag), 15 (contagem), 16 (tag sem uso) e 17 (preço 0).
 
 ---
 

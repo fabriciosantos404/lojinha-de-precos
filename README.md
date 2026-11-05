@@ -9,6 +9,7 @@ Site estático (HTML/CSS/JS puro, **zero dependências, zero build**) que serve 
 > (`file://` — duplo clique no `index.html`) → tela em branco.
 > **Não abra o `index.html` pelo explorador de arquivos.** Use sempre um dos comandos abaixo
 > e acesse **http://localhost:8000**.
+> (Se ainda assim abrir via `file://`, o guard `js/boot-guard.js` mostra uma orientação em vez de tela em branco.)
 
 ## Pré-requisito único
 
@@ -27,9 +28,11 @@ Escolha **UMA** variante, na raiz do repositório, e depois abra **http://localh
 # macOS / Linux (Git Bash e WSL também funcionam)
 ./scripts/serve.sh
 
-# Alternativas manuais (sem os scripts do projeto)
-python -m http.server 8000   # Python 3 no PATH (no Windows: py -3 -m http.server 8000)
-npx serve                    # alternativa via Node.js → http://localhost:3000
+# Alternativas manuais (sem os scripts do projeto) — o --bind 127.0.0.1 mantém o
+# servidor só na sua máquina, para não expor o site na rede local
+python -m http.server 8000 --bind 127.0.0.1   # Python 3 no PATH
+py -3 -m http.server 8000 --bind 127.0.0.1    # Windows: launcher "py" do Python
+npx serve --listen 127.0.0.1:3000             # alternativa via Node.js → http://localhost:3000
 ```
 
 Parar o servidor: `Ctrl+C` no terminal onde ele está rodando.
@@ -79,7 +82,8 @@ Schema completo, enums e passo a passo de adição de item: **[docs/DATA.md](doc
 lojinha-de-precos/
 ├── index.html            # Página única (header, filtros, lista, footer)
 ├── css/styles.css        # Tokens claro/escuro, layout mobile-first, badges
-├── js/                   # 6 módulos ES: app, state, filters, render, theme, utils
+├── js/                   # 6 módulos ES (app, state, filters, render, theme, utils)
+│                         # + boot-guard.js (orientação quando aberto via file://)
 ├── data/items.json       # Fonte da verdade do catálogo (50 itens, envelope v1)
 ├── scripts/              # serve.ps1, serve.sh, validate_data.py
 ├── tests/                # node:test (*.test.mjs) + checklist manual

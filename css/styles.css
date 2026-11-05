@@ -601,7 +601,16 @@ button:hover {
 
 /* =========================================================================
    9. GRUPOS (modo agrupado — gerado pelo render.js)
+   Estrutura real: li.group (filho de #item-list) > h2.group__title +
+   ul.group__list — a grade interna de cards é .group__list (seção 7.4).
    ========================================================================= */
+
+/* Modo agrupado (D-5): o grupo ocupa a linha inteira da grade de #item-list;
+   sem isso cada li.group viraria UMA célula e espremeria .group__list. */
+.group {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
 
 .group__title {
   margin-top: var(--space-5);
@@ -613,7 +622,9 @@ button:hover {
   overflow-wrap: anywhere;
 }
 
-.group__title:first-child {
+/* O título é SEMPRE o primeiro filho do .group — por isso o seletor passa
+   pelo grupo: só o primeiro grupo dispensa o respiro superior. */
+.group:first-child > .group__title {
   margin-top: 0;
 }
 

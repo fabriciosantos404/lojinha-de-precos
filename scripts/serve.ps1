@@ -5,7 +5,8 @@
  O que faz:
    Sobe um servidor de arquivos estaticos usando SOMENTE a biblioteca padrao
    (stdlib) do Python (python -m http.server) a partir da RAIZ do repositório,
-   servindo o site em http://localhost:8000.
+   servindo o site em http://localhost:8000 — RESTRITO a 127.0.0.1
+   (via --bind 127.0.0.1; nunca exposto nas demais interfaces da maquina).
 
  Por que e obrigatorio:
    O site usa modulos ES (<script type="module">) e fetch() de data/items.json.
@@ -22,8 +23,8 @@
      powershell -ExecutionPolicy Bypass -File scripts\serve.ps1)
 
  ALTERNATIVAS SEM ESTE SCRIPT (mesmo resultado):
-   python -m http.server 8000         # Python 3 no PATH
-   py -3 -m http.server 8000          # launcher "py" do Windows (python.org)
+   python -m http.server 8000 --bind 127.0.0.1   # Python 3 no PATH
+   py -3 -m http.server 8000 --bind 127.0.0.1    # launcher "py" do Windows
    npx serve                          # alternativa via Node.js (baixa sob
                                       # demanda; abre em http://localhost:3000)
 
@@ -72,6 +73,7 @@ try {
     Write-Host "=== Servidor local - lojinha-de-precos ===" -ForegroundColor Cyan
     Write-Host "Diretorio servido : $repoRoot"
     Write-Host "URL do site       : http://localhost:$Port"
+    Write-Host "Escuta            : somente 127.0.0.1 (nao exposto na LAN)"
     Write-Host ""
     Write-Host "AVISO: nao abra o index.html via file:// - os modulos ES e o fetch() do" -ForegroundColor Yellow
     Write-Host "       JSON nao funcionam direto do disco (bloqueio de CORS do navegador)." -ForegroundColor Yellow
@@ -87,9 +89,12 @@ try {
         $exitCode = 1
     } else {
         # Ordem de fallback: "python" (PATH direto) -> "py" (launcher Windows)
+        # --bind 127.0.0.1: SEMPRE restrito ao loopback. Sem isso o http.server
+        # escuta em 0.0.0.0 e publica a RAIZ do repositorio (incl. .git/) em
+        # todas as interfaces (risco de exfiltracao via LAN / DNS rebinding).
         $candidatos = @(
-            @{ Comando = 'python'; Argumentos = @('-m', 'http.server', $Port) },
-            @{ Comando = 'py';     Argumentos = @('-3', '-m', 'http.server', $Port) }
+            @{ Comando = 'python'; Argumentos = @('-m', 'http.server', $Port, '--bind', '127.0.0.1') },
+            @{ Comando = 'py';     Argumentos = @('-3', '-m', 'http.server', $Port, '--bind', '127.0.0.1') }
         )
 
         $servidorIniciado = $false
@@ -111,6 +116,8 @@ try {
             # Python quebrado) - nunca o Ctrl+C do usuario.
             $cronometro = [System.Diagnostics.Stopwatch]::StartNew()
             $argumentos = $candidato.Argumentos
+            # Log da linha de comando exata (auditoria T-21: evidenciar o --bind)
+            Write-Host "Executando: $nome $($argumentos -join ' ')" -ForegroundColor DarkGray
             & $nome @argumentos
             $cronometro.Stop()
             $codigoSaida = $LASTEXITCODE

@@ -55,7 +55,7 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 | **RF-03** | **Busca por nome**: campo de texto filtra em tempo real (input ou ≤300 ms de debounce) por correspondência parcial, sem diferenciar maiúsculas/minúsculas nem acentos. | "pocao" encontra "Poção"; "sko" encontra "Skooma". |
 | **RF-04** | **Faixa de preço**: campos "mínimo" e "máximo" (números ≥ 0 em PO) que combinam com a busca e os demais filtros (E **AND** entre tipos de filtro). | Definir mín=5 e máx=15 mostra apenas itens de 5–15 PO. |
 | **RF-05** | **Ordenação** por **preço** (crescente/decrescente) e por **nome** (A→Z/Z→A), com estado inicial por categoria. | Ordenar por preço asc retorna Cura Menor (5) antes de Cura Básica (10); desempate por nome asc. |
-| **RF-06** | **Filtro por categoria** (seleção única com opção "Todas", padrão "Todas") e, visível quando relevante, **filtro por subcategoria**. | Selecionar "Armas" + "Marciais" lista exatamente 5 itens. |
+| **RF-06** | **Filtro por categoria** (seleção única com opção "Todas", padrão "Todas") e, visível quando relevante, **filtro por subcategoria**. | Selecionar "Armas" + "Marciais" lista exatamente 4 itens (D-13). |
 | **RF-07** | **Modo escuro/claro** alternável por botão, aplicado imediatamente e **persistido em `localStorage`**; padrão = tema do sistema ou claro. | Recarregar a página mantém o tema escolhido. |
 | **RF-08** | **Badges de atributos** por item: `preço (PO)`, `peso (kg)`, `dano (ex.: 1d8)`, `CA` (ex.: `CA 14 + Dex máx +2`), `requisito (FOR 13)`, `cura (ex.: 4d4+4)`, `bônus (+1 concentração)`, `restrição (não acumulativo)`, `duração ([Descanso Curto])`. | Cada item exibe todos os atributos aplicáveis da fonte. |
 | **RF-09** | **Badges de efeito** destacam visualmente **bônus positivos** (verde) e **negativos** (vermelho) — ex.: Skooma `+1 For/Dex/Con` (verde) e `-1 Int/Sab/Car` (vermelho). | Skooma exibe ambos os bônus com cores/sinais distintos. |
@@ -157,8 +157,8 @@ O **lojinha-de-precos** é um site estático (HTML/CSS/JS puro, sem build nem fr
 
 - **GIVEN** o site está aberto com todos os filtros no padrão
 - **WHEN** eu seleciono a categoria "Armas"
-- **THEN** são exibidos 9 itens de armas, agrupados em "Simples", "Marciais" e "Versáteis"
-- **AND** a contagem exibe "9 itens encontrados"
+- **THEN** são exibidos 8 itens de armas, agrupados em "Simples", "Marciais" e "Versáteis"
+- **AND** a contagem exibe "8 itens encontrados"
 
 ### US-02 — Buscar item por nome
 > **Como** mestre, **quero** digitar o nome do item **para** não percorrer a lista inteira.
