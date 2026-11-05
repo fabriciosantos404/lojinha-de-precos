@@ -53,7 +53,7 @@ Bind M1:     localhost → 200 · 127.0.0.1 → 200 · IP da LAN (192.168.1.11) 
 | `tests/utils.test.mjs` | **12** | `normalizeText` (NFD, acento/caixa), `formatPrice` (RB-01/RB-02), `CATEGORY_ORDER`/labels PT-BR (D-9), `debounce` 200 ms |
 | **Total** | **68** (12 + 14 + 42) | `tests/fixtures.mjs` só fornece dados — os testes dele rodam dentro de `filters.test.mjs` |
 
-> Observação de cobertura: **não há teste automatizado de DOM** (render/theme/app) — decisão D-8: só funções DOM-free são testáveis no Node. A validação desses módulos é **manual** → `tests/manual-checklist.md` (seções 1, 6, 7, 8, 12–17).
+> Observação de cobertura: **não há teste automatizado de DOM** (render/theme/app) — decisão D-8: só funções DOM-free são testáveis no Node. A validação desses módulos é **manual** → `tests/manual-checklist.md` (seções 1, 6, 7, 8, 12–17). **Única exceção parcial:** `js/boot-guard.js` recebeu verificação lógica fora do navegador (execução real em `node:vm` com stub de DOM → §4.9) — mas **sem** a CSP nem o bloqueio de módulo reais do browser → checklist **15.x**.
 
 ## 3. Validador de dados — `py scripts/validate_data.py`
 
@@ -103,7 +103,7 @@ IP da LAN da máquina: **192.168.1.11** (testado em 2026-11-04).
 | `http://127.0.0.1:8137/data/items.json` | **HTTP 200** ✅ |
 | `http://192.168.1.11:8137/index.html` | **RECUSADO** — "Impossível conectar-se ao servidor remoto" ✅ (esperado M1) |
 | TCP `127.0.0.1:8137` | `TcpTestSucceeded = True` |
-| TCP `192.168.1.11:8137` | `TcpTestSucceeded = **False**` (porta não escuta na interface de LAN) |
+| TCP `192.168.1.11:8137` | `TcpTestSucceeded = False` — **a porta não escuta na interface de LAN** |
 | Liberação de porta após `Stop-Process` | Porta **livre** (`True`) — nenhum processo órfão |
 
 **Conclusão M1:** a exposição via LAN está **fechada** na porta de teste. Regressão coberta: se alguém remover o `--bind 127.0.0.1` de um wrapper, a linha "Escuta: somente 127.0.0.1" do banner some e o TCP da LAN passa a dar `True` → o passo **9.6** do checklist manual detecta a regressão em navegador.
@@ -142,11 +142,10 @@ Executada contra `data/items.json` real para garantir que os **números esperado
 ```
 BUGS FOUND
 ━━━━━━━━━━━━━━━━━━━━
-(1 MINOR novo · 2 MINOR de arrasto · 2 PENDENTES de browser · nenhum BLOQUEANTE/MAJOR confirmado)
+(1 MINOR novo · 2 MINOR herdados · 2 PENDENTES de browser · nenhum BLOQUEANTE/MAJOR confirmado)
 ```
 
-- **[MINOR] (novo) Mensagem do guard é Windows-only** — `js/boot-guard.js:21-23` (dono: dono de `boot-guard.js`) — o texto cita **apenas** `py scripts/serve.ps1`, mas o projeto publica também `scripts/serve.sh` (macOS/Linux — checklist 9.1) e a alternativa `npx serve`. **Impacto:** usuário em macOS/Linux recebe um comando que não existe na máquina dele. **Mesmo texto** já existe em `js/render.js:55` (`FILE_PROTOCOL`) → é inconsistência **herdada, não regressão**. **Não corrigido aqui** (arquivo alheio); pedido: acrescentar `./scripts/serve.sh` como alternativa na string. Baixo esforço, zero risco de comportamento.
-
+- **[MINOR] (novo) Mensagem do guard é Windows-only** — `js/boot-guard.js:21-23` (dono: responsável por `js/boot-guard.js` — **não mapeado explicitamente no plano** → rotear via Tech Lead; provável par `frontend-engineer`/`backend-engineer`, donos do achado FILE_PROTOCOL) — o texto cita **apenas** `py scripts/serve.ps1`, mas o projeto publica também `scripts/serve.sh` (macOS/Linux — checklist 9.1) e a alternativa `npx serve`. **Impacto:** usuário em macOS/Linux recebe um comando que não existe na máquina dele. **Mesmo texto** já existe em `js/render.js:55` (`FILE_PROTOCOL`) → é inconsistência **herdada, não regressão**. **Não corrigido aqui** (arquivo alheio); pedido: acrescentar `./scripts/serve.sh` como alternativa na string. Baixo esforço, zero risco de comportamento.
 - **[MINOR]** *Teste de "preço 0 aceito" (RF-04) não tem item de preço 0 no catálogo* — `data/items.json` (dono: `database-engineer`) — o menor preço é 1 PO. **Impacto:** o caso de teste 4.4 do checklist só valida que o input aceita `0` e que o filtro não restringe; a borda "item de 0 PO aparece com `min=0`" é coberta **somente** pelos testes de unidade (`filters.test.mjs` usa fixtures com `price 0`). **Não é bug de código** — é lacuna de dado aceitável. Sem ação necessária; se algum dia existir item gratuito, o teste manual passa a valer.
 - **[MINOR]** *ID `#results` do `index.html` não é referenciado por nenhum módulo* — `index.html` (dono: `frontend-engineer`) — contêiner estático dos 4 estados, manipulado indiretamente pelos filhos (`#state-loading`, `#state-empty`, `#state-error`, `#item-list`). **Comportamento esperado, sem efeito funcional.** Registrado apenas para rastreabilidade; **nenhuma correção pedida**.
 - **[PENDENTE — verificação manual]** *Mensagem `FILE_PROTOCOL` pode ser inalcançável em `file://`* — `js/app.js` + `js/render.js` (dono: `backend-engineer`/`frontend-engineer`) — se o navegador bloquear o próprio `<script type="module">` via `file://` (CORS de origin `null`, Chrome/Firefox), `app.js` nunca executa e o usuário ficava preso em "Carregando itens…". **→ MITIGADO em 2026-11-04 pelo novo `js/boot-guard.js`** (script clássico no `<head>`, roda onde o módulo não roda; comportamento verificado de verdade em `node:vm` → §4.9: `file:` mostra `#state-error` com orientação e esconde `#retry`; `http:` é early-return). **Continua pendente de confirmação em navegador real** → checklist **15.1–15.6**. Se em navegador o usuário ainda ficar em "Carregando itens…" eterno → reclassificar como **MAJOR** e abrir achado para o dono de `js/boot-guard.js` (não alterar código aqui).
@@ -174,15 +173,17 @@ BUGS FOUND
 
 ## 10. RISKS
 
-1. **Zero cobertura automatizada de DOM** — qualquer regressão em `render.js`/`app.js`/`theme.js` só aparece no checklist manual, que é lento e sujeito a omissão do executor. *Mitigação:* checklist com números exatos (§6) + rodada obrigatória antes do gate T-25.
-2. **`file://` pode esconder a mensagem de orientação** (§7, pendente) — primeiro contato do usuário com o produto é o duplo-clique.
-3. **Teste XSS exige mutar `data/items.json` temporariamente** — se a execução for interrompida no meio, o JSON fica com item-lixo e o validador passa a falhar (a seção 12 exige backup + reversão + revalidação).
-4. **Suíte verde ≠ produto verde:** 68 testes cobrem a lógica pura; os requisitos RF-07/RF-08/RF-09/RF-10/RF-11 na tela dependem 100% do manual.
-5. **Ambiente único (Windows/Node 24):** não há evidência de execução em macOS/Linux (`serve.sh`) nem em outros runtimes de Node.
+1. **Zero cobertura automatizada de DOM** — qualquer regressão em `render.js`/`app.js`/`theme.js`/`boot-guard.js` só aparece no checklist manual, que é lento e sujeito a omissão do executor. *Mitigação:* checklist com números exatos (§6) + rodada obrigatória antes do gate T-25. **Novo:** o guard ganhou verificação lógica em `node:vm` (§4.9), mas o **DOM real** continua sem automação.
+2. **`file://` é o primeiro contato do usuário** e agora depende de **duas** hipóteses não confirmadas em navegador: (a) o guard executa de fato, (b) a CSP `script-src 'self'` não o bloqueia em origem opaca (§7, 2 pendentes → checklist 15.1–15.6). Se qualquer uma falhar, o usuário volta ao loading eterno.
+3. **Guard × `app.js` podem disputar o mesmo estado em `file://`** — em navegadores que *permitem* módulo ES em `file://`, `renderError('FILE_PROTOCOL')` do `app.js` (async, pós-fetch) sobrescreve a mensagem do guard; o estado final continua sendo erro PT-BR (aceitável, checklist 15.4), mas o **texto exato** fica indefinido. *Mitigação:* 15.4 manda registrar qual apareceu.
+4. **Teste XSS exige mutar `data/items.json` temporariamente** — se a execução for interrompida no meio, o JSON fica com item-lixo e o validador passa a falhar (a seção 12 exige backup + reversão + revalidação).
+5. **Suíte verde ≠ produto verde:** 68 testes cobrem a lógica pura; os requisitos RF-07/RF-08/RF-09/RF-10/RF-11 na tela dependem 100% do manual.
+6. **Ambiente único (Windows/Node 24):** não há evidência de execução em macOS/Linux (`serve.sh`) nem em outros runtimes de Node — o M1 foi validado apenas no IP IPv4 desta máquina (`192.168.1.11`); outros cenários (IPv6 `::1`, VPN, Docker) não testados.
 
 ## 11. Próximos passos (T-20 completo)
 
-1. Executor humano roda `tests/manual-checklist.md` em navegador real e preenche as colunas de status.
-2. Confirmar o passo 15.2 (`file://`) e classificar o achado pendente (§7).
-3. Rodar a auditoria de segurança T-21 (`security-engineer`) e o smoke de infra T-08 (`devops-engineer`) — fora do escopo deste relatório.
-4. Reexecutar **tudo** (`node --test` + validador + checklist) após qualquer correção de achado (PLAN §6, passo 5).
+1. Executor humano roda `tests/manual-checklist.md` em navegador real e preenche as colunas de status — **prioridade: 15.1–15.6 (guard em `file://`), 9.6 (M1 na LAN) e 9.7 (guard neutro em `http://`)**.
+2. Classificar os **2 pendentes** do §7 (FILE_PROTOCOL mitigado + CSP em `file://`) a partir dos passos 15.3/15.5.
+3. Encaminhar o **[MINOR] mensagem Windows-only** do guard ao dono de `js/boot-guard.js` (+ o `render.js:55` homólogo).
+4. Rodar a auditoria de segurança T-21 (`security-engineer`) e o smoke de infra T-08 (`devops-engineer`) — a re-verificação de M1 pós-correção já está registrada em `SECURITY.md` §8/§9.1.
+5. Reexecutar **tudo** (`node --test` + validador + estáticos + checklist) após qualquer correção de achado (PLAN §6, passo 5).
